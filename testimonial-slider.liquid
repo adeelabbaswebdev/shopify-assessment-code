@@ -1,0 +1,161 @@
+{{ 'testimonial-slider.css' | asset_url | stylesheet_tag }}
+
+<div class="testimonial-slider-container" data-auto="{{ section.settings.autoslide }}" data-speed="{{ section.settings.speed }}">
+  <div class="page-width">
+    <div class="testimonial-slides-wrapper">
+      {% for block in section.blocks %}
+        
+        <div class="testimonial-slide {% if forloop.first %}active{% endif %}">
+          <div class="testimonial-quote">"{{ block.settings.quote }}"</div>
+          
+          <div class="parent-block">
+            <div class="stars">
+              {% for i in (1..block.settings.stars) %}
+                <span>★</span>
+              {% endfor %}
+            </div>
+            <div>
+              <img src="{{ 'Vector.png' | asset_url }}" alt="Hero Image" height="100%" width="100%">
+            </div>
+            <div class="reviewer-info">
+              {{ block.settings.name }}
+            </div>
+            <div>
+              <img src="{{ 'Vector.png' | asset_url }}" alt="Hero Image" height="100%" width="100%">
+            </div>
+            <div class="reviewer-info">
+              {{ block.settings.date }}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="slider-arrows">
+      <div class="slider-arrow prev">‹</div>
+      <div class="slider-arrow next">›</div>
+    </div>
+
+    <div class="slider-dots">
+      {% for block in section.blocks %}
+        <span class="dot {% if forloop.first %}active-dot{% endif %}" data-index="{{ forloop.index0 }}"></span>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% javascript %}
+document.addEventListener("DOMContentLoaded", function () {
+  let container = document.querySelector(".testimonial-slider-container");
+  let slidesWrapper = document.querySelector(".testimonial-slides-wrapper");
+  let slides = document.querySelectorAll(".testimonial-slide");
+  let dots = document.querySelectorAll(".slider-dots .dot");
+  let next = document.querySelector(".slider-arrow.next");
+  let prev = document.querySelector(".slider-arrow.prev");
+
+  let index = 0;
+  let autoslide = container.dataset.auto === "true";
+  let speed = parseInt(container.dataset.speed) || 4000;
+  let timer;
+
+  function showSlide(i) {
+    // Update slide visibility
+    slides.forEach((slide, idx) => {
+      slide.classList.toggle("active", idx === i);
+    });
+    
+    // Update dots
+    dots.forEach((dot, idx) => {
+      dot.classList.toggle("active-dot", idx === i);
+    });
+    
+    // Update wrapper position for slide animation
+    slidesWrapper.style.transform = `translateX(-${i * 100}%)`;
+  }
+
+  function nextSlide() {
+    index = (index + 1) % slides.length;
+    showSlide(index);
+  }
+
+  function prevSlide() {
+    index = (index - 1 + slides.length) % slides.length;
+    showSlide(index);
+  }
+
+  next.addEventListener("click", () => {
+    nextSlide();
+    resetTimer();
+  });
+
+  prev.addEventListener("click", () => {
+    prevSlide();
+    resetTimer();
+  });
+
+  dots.forEach(dot => {
+    dot.addEventListener("click", () => {
+      index = Number(dot.dataset.index);
+      showSlide(index);
+      resetTimer();
+    });
+  });
+
+  function startAutoplay() {
+    if (autoslide) {
+      timer = setInterval(nextSlide, speed);
+    }
+  }
+
+  function resetTimer() {
+    if (autoslide) {
+      clearInterval(timer);
+      startAutoplay();
+    }
+  }
+
+  // Initialize the slider position
+  slidesWrapper.style.transform = `translateX(-${index * 100}%)`;
+  
+  startAutoplay();
+});
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "Testimonial Slider",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "autoslide",
+      "label": "Enable Auto Slide",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "speed",
+      "label": "Auto Slide Speed (ms)",
+      "min": 2000,
+      "max": 9500,
+      "step": 500,
+      "default": 4000
+    }
+  ],
+  "blocks": [
+    {
+      "type": "testimonial",
+      "name": "Testimonial",
+      "settings": [
+        { "type": "textarea", "id": "quote", "label": "Quote" },
+        { "type": "range", "id": "stars", "label": "Star Rating", "min": 1, "max": 5, "default": 5 },
+        { "type": "text", "id": "name", "label": "Reviewer Name" },
+        { "type": "text", "id": "date", "label": "Date", "default": "2025" }
+      ]
+    }
+  ],
+  "max_blocks": 10,
+  "presets": [
+    { "name": "Testimonial Slider" }
+  ]
+}
+{% endschema %}
